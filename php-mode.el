@@ -633,10 +633,10 @@ current `tags-file-name'."
       t)))
 
 ;; Define function documentation function
-(defun php-search-documentation ()
+(defun php-search-documentation (func)
   "Search PHP documentation for the word at point."
-  (interactive)
-  (browse-url (concat php-search-url (current-word t))))
+  (interactive (list (read-string "PHP Function: " (current-word t))))
+  (browse-url (concat php-search-url func)))
 
 ;; Define function for browsing manual
 (defun php-browse-manual ()
