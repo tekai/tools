@@ -10,7 +10,8 @@
   "Run a line! of PHP code. Use echo to see a result. Call with any
 prefix to insert the result"
   (interactive "sPHP Code: \nP")
-  (let ((result (shell-command-to-string (format "php -r '%s;'" code))))
+  (let* ((code (replace-regexp-in-string "\"" "\\\\\"" code))
+         (result (shell-command-to-string (format "php -r \"%s;\"" code))))
     (if doInsert
         (insert result)
         (message "%s" result))))
