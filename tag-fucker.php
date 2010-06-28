@@ -53,7 +53,7 @@ function tag_file($file) {
     $stringp  = false;
     $curly = 0;
     if (file_exists($file)) {
-        echo "\n".$file;
+        echo chr(12)."\n".$file;
         $lines = file($file);
         $source = join("", $lines);
         $tokens = token_get_all($source);
@@ -106,7 +106,7 @@ function tag_file($file) {
                         $def['name'] = $type.' '.$t[1];
                     }
                     if ($function) {
-                        $defs[] = $def['search'].''.$def['name'].''.$def['line'].','.$def['offset']."\n";
+                        $defs[] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
                         $def = array();
                         $function = false;
                     }
@@ -127,7 +127,7 @@ function tag_file($file) {
                         $def['search'] = $m[0];
                     }
                     $def['name'] = substr($t[1],1,-1);
-                    $defs[] = $def['search'].''.$def['name'].''.$def['line'].','.$def['offset']."\n";
+                    $defs[] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
                     $def = array();
 
                 }
