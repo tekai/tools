@@ -52,13 +52,15 @@ function tag_file($file) {
     $define   = false;
     $stringp  = false;
     $curly = 0;
+    $line = 0;
     if (file_exists($file)) {
         echo chr(12)."\n".$file;
         $lines = file($file);
         $source = join("", $lines);
         $tokens = token_get_all($source);
+        unset($source);
         //$curly = 0;
-        foreach ($tokens as $t) {
+        foreach ($tokens as &$t) {
 
             if (is_array($t)) {
                 //333: T_FUNCTION
@@ -95,7 +97,7 @@ function tag_file($file) {
                     }
 
                     $def['search'] = 'function '.$t[1];
-                    preg_match('/^(.*)'.preg_quote($t[1]).'/', $lines[$t[2]-1], $m);
+                    preg_match('/^(.*)'.preg_quote($t[1], '/').'/', $lines[$t[2]-1], $m);
                     if (!empty($m)) {
                         $def['search'] = $m[0];
                     }
@@ -122,7 +124,7 @@ function tag_file($file) {
 
                     $define = false;
                     $def['search'] = 'define('.$t[1];
-                    preg_match('/^(.*)'.preg_quote($t[1]).'/', $lines[$t[2]-1], $m);
+                    preg_match('/^(.*)'.preg_quote($t[1],'/').'/', $lines[$t[2]-1], $m);
                     if ($m) {
                         $def['search'] = $m[0];
                     }
@@ -155,6 +157,8 @@ function tag_file($file) {
             }
         }
         $tags = join("", $defs);
+        unset($defs);
+        unset($lines);
         echo ',',strlen($tags),"\n",
             $tags;
        
