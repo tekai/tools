@@ -2,7 +2,7 @@ Collection of tools I using during PHP development using Emacs
 
 php-mode.el
 -----------
-php-mode.el is based on [php-mode.sf.net](php-mode.sf.net) but uses a different `TAGS` file format to differentiate between methods and functions and associate `new Object()` with the right method `__constructor()`.
+php-mode.el is based on [php-mode.sf.net](http://php-mode.sf.net) but uses a different `TAGS` file format to differentiate between methods and functions and associate `new Object()` with the right method `__constructor()`.
 
 tag-fucker.php
 --------------
@@ -16,7 +16,7 @@ Some more functions to deal with PHP development.
 
 * M-x php-run-buffer executes the buffer via the PHP CLI
 
-* M-x use-superglobals to change deprecated `$HTTP_X_VARS` into the superglobals `$_X`
+* M-x use-superglobals to change deceprated `$HTTP_X_VARS` into the superglobals `$_X`
 
 * M-x php-debug-file debug file with xdebug & PHP CLI (and [geben](http://code.google.com/p/geben-on-emacs/))
 
