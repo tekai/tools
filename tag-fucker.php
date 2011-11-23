@@ -29,20 +29,6 @@ etags format
 suche => suchbegriff
 {tag_definition_text}<\x7f>{tagname}<\x01>{line_number},{byte_offset}
  */
-/*
-Tags and Numbers
-315: T_CONSTANT_ENCAPSED_STRING
-333: T_FUNCTION
-352: T_CLASS
-365: T_COMMENT
-367: T_OPEN_TAG
-369: T_CLOSE_TAG
-370: T_WHITESPACE
-341: T_PUBLIC
-342: T_PROTECTED
-343: T_PRIVATE
-346: T_STATIC
- */
 
 function tag_file($file) {
     $defs = array();
@@ -63,28 +49,25 @@ function tag_file($file) {
         foreach ($tokens as &$t) {
 
             if (is_array($t)) {
-                //333: T_FUNCTION
-                //352: T_CLASS
-                if ($t[0] == 333) {
+                if ($t[0] == T_FUNCTION) {
                     $function = true;
                     $def = array('line' => $t[2], 'offset' => $offset);
                 }
-                elseif ($t[0] == 352) {
+                elseif ($t[0] == T_CLASS) {
                     $class = true;
                     $className = '';
                 }
-                //354: T_EXTENDS
-                elseif ($t[0] == 354) {
+                elseif ($t[0] == T_EXTENDS) {
                     $extends = true;
                 }
-                elseif ($extends && $t[0] == 307) {
+                elseif ($extends && $t[0] == T_STRING) {
                     $extends = false;
                 }
-                elseif ($class && !$curly && $t[0] == 307) {
+                elseif ($class && !$curly && $t[0] == T_STRING) {
                     $className = $t[1];
                 }
-                //307: T_STRING class or function/method name
-                elseif ($function && $t[0] == 307) {
+                // class or function/method name
+                elseif ($function && $t[0] == T_STRING) {
                     if ($class && $curly && ($t[1] == '__construct' ||
                                              $t[1] == $className)) {
                         $type = 'constructor';
@@ -114,13 +97,13 @@ function tag_file($file) {
                     }
 
                 }
-                //307: T_STRING define
-                elseif ($t[0] == 307 && $t[1] == 'define') {
+                // T_STRING define
+                elseif ($t[0] == T_STRING && $t[1] == 'define') {
                     $define = true;
                     $def = array('line' => $t[2], 'offset' => $offset);
                 }
-                // 315: T_CONSTANT_ENCAPSED_STRING aka 'string' or "string"
-                elseif ($t[0] == 315 && $define) {
+                // T_CONSTANT_ENCAPSED_STRING aka 'string' or "string"
+                elseif ($t[0] == T_CONSTANT_ENCAPSED_STRING && $define) {
 
                     $define = false;
                     $def['search'] = 'define('.$t[1];
@@ -139,7 +122,7 @@ function tag_file($file) {
                 $offset += strlen($t[1]);
             }
             else {
-                /* "{$foo[0]}" is openend by 374 but closed by a ordinary } */
+                /* "{$foo[0]}" is openend by T_CURLY_OPEN but closed by a ordinary } */
                 if ($t == '"') {
                     $stringp = !$stringp;
                 }
