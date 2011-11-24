@@ -83,6 +83,8 @@ function tag_file($file) {
                     preg_match('/^(.*)'.preg_quote($t[1], '/').'/', $lines[$t[2]-1], $m);
                     if (!empty($m)) {
                         $def['search'] = $m[0];
+                        // offset has to point to the start of the line
+                        $def['offset'] -= strlen($m[1]) -9;
                     }
                     if ($type == 'constructor') {
                         $def['name'] = $type.' '.$className;
@@ -91,7 +93,7 @@ function tag_file($file) {
                         $def['name'] = $type.' '.$t[1];
                     }
                     if ($function) {
-                        $defs[] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
+                        $defs[$def['name']] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
                         $def = array();
                         $function = false;
                     }
@@ -110,9 +112,11 @@ function tag_file($file) {
                     preg_match('/^(.*)'.preg_quote($t[1],'/').'/', $lines[$t[2]-1], $m);
                     if ($m) {
                         $def['search'] = $m[0];
+                        // offset has to point to the start of the line
+                        $def['offset'] -= strlen($m1);
                     }
                     $def['name'] = substr($t[1],1,-1);
-                    $defs[] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
+                    $defs[$def['name']] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
                     $def = array();
 
                 }
