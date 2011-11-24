@@ -1,4 +1,4 @@
-(defun use_superglobals ()
+(defun use-superglobals ()
   "Replace HTTP_X_VARS with _X in current buffer"
   (interactive)
   (save-excursion
@@ -96,7 +96,7 @@ iff the file is in the same path as the TAGS file"
 
 ;; PHP XREF via grep
 (defun php-xref (func)
-  "JSLint the buffer"
+  "Try to find every call of func"
   (interactive (list (read-string "PHP Function: " (current-word t))))
   (let ((buffer-name "*php-xref*")
         (msg nil)
