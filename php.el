@@ -14,6 +14,7 @@ prefix to insert the result"
          (result (shell-command-to-string (format "php -r \"%s;\"" code))))
     (if doInsert
         (insert result)
+        (message "php -r \"%s;\"" code)
         (message "%s" result))))
 
 ;; Syntax check the current buffer
@@ -102,7 +103,7 @@ iff the file is in the same path as the TAGS file"
         (root (substring tags-file-name
                          0 (- (length tags-file-name) 4)))
         (func (replace-regexp-in-string "\"" "\\\\\"" func)))
-    (message (format "cd %s; grep -F -r -n -o --include='*.php' '%s' *" root func))
+    (message (format "cd %s; grep -F -r -n -o --include='*.php' '\\<%s\\>' *" root func))
     (setq msg (shell-command-to-string (format "cd %s; grep -F -r -n -o --include='*.php' '%s' *" root func)))
     (if (string= msg "")
         (progn (message "no references found") 
@@ -143,3 +144,35 @@ iff the file is in the same path as the TAGS file"
           (goto-char (point-min))
           (display-buffer buf t))
         t)))
+
+
+;;
+;; Indentation in PHP could be better by imho following Java coding
+;; standards closer:
+;; if (longline
+;;     && another line)
+;; should be
+;; if (longline
+;;         && another line)
+;;
+;; but array(stuff,
+;;           more)
+;; should still line up (they're using the same var for indentation:
+;;  arglist-cont-nonempty)
+;;
+
+;; missing: get-block, split-string
+;; check: dolist
+;; (defun php-get-undeclared-variables ()
+;;   "Get a list of undeclared variables of the surrounding block.
+;; \(Doesn't deal with list\(...\) = yet\)"
+;;   (interactive)
+;;   (let ((vars nil)
+;;         (code-block (get-block)))
+;;     (setq ret (shell-command-to-string (format "get-undeclared-vars.php - %s" block)))
+;;     (if (string= ret "")
+;;         (message "No undeclared variables")
+;;         (setq vars (split-string "\n" ret))
+;;         (dolist (vars v)
+;;           (setq v (split-string ";"))
+;;           (message (car v))))))
