@@ -33,8 +33,12 @@ T_SL_EUQAL
 T_OR_EUQAL
 T_XOR_EUQAL
 
-bugs: doesn't handle assignments with foreach ($foo as $bar => $baz)
+bugs:
+- doesn't handle scope (functions, classes) as in it assumes it's all in the same scope
+- doesn't handle variables introduction by function parameters
 
+Feature:
+Doesn't handle eval, variable vars, create_function() etc.
  */
 
 // #!/usr/bin/php -d xdebug.profiler_enable=On
@@ -110,11 +114,14 @@ function tag_file($file) {
         // arrays only to limited extend
         // object fields only those directly declared in the class
 
+        $foreach = false;
+        $as = false;
         $unassigned = array();
         $assign  = array();
         $var_tok = null;
         $p_level = 1; // Verschachtelung von () + 1 damit == true
         foreach ($tokens as &$t) {
+
             /*
             if (is_array($t)) {
                 echo 'T:'.token_name($t[0]).":".$t[1]."\n";
@@ -123,10 +130,21 @@ function tag_file($file) {
                 echo 'S:'.$t."\n";
             }
             */
+            if (is_array($t) && ($t[0] == T_FOREACH)) {
+                $foreach = true;
+            }
+            elseif (is_array($t) && ($t[0] == T_AS)) {
+                $as = $p_level;
+            }
+
             if (is_array($t) && ($t[0] == T_VARIABLE || $t[0] == T_STRING_VARNAME)) {
                 $var_tok = $t;
                 if ($t[0] == T_STRING_VARNAME) {
                     $var_tok[1] = '$'.$t[1];
+                }
+                if ($foreach === true && $as && $as <= $p_level) {
+                    $assigned[$var_tok[1]] = true;
+                    $var_tok = null;
                 }
             }
             elseif ($t == '(') {
@@ -152,6 +170,10 @@ function tag_file($file) {
                     $assigned = array_merge($assigned, $p_assign);
 
                     $var_tok = null;
+                }
+                if ($foreach === true && $as && $as == $p_level) {
+                    $foreach = false;
+                    $as = false;
                 }
                 $p_level--;
             }
@@ -180,6 +202,7 @@ function tag_file($file) {
                 }
                 $unassigned[$var_tok[1]][] = $var_tok[2];
                 $var_tok = null;
+
             }
             else {
                 continue;
