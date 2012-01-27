@@ -38,7 +38,7 @@ bugs:
 - doesn't handle variables introduction by function parameters
 
 Feature:
-Doesn't handle eval, variable vars, create_function() etc.
+Doesn't handle eval, variable vars, create_function() etc. because they're kinda bad
  */
 
 // #!/usr/bin/php -d xdebug.profiler_enable=On
@@ -47,16 +47,31 @@ $argc = $_SERVER['argc'];
 if ($argc < 2) {
     exit;
 }
-elseif ($argc == 2 && $argv[1] == '-') {
-    while ($line = trim(fgets(STDIN))) {
-        $line = strip_dotdash($line);
-        tag_file($line);
-    }
-}
 else {
-    for ($i=1;$i<$argc;$i++ ) {
-        $line = strip_dotdash($argv[$i]);
-        tag_file($line);
+    // parse script parameters
+    $options = array('notags' => false);
+    foreach ($argv as $i => $arg) {
+        switch ($arg) {
+            case '-r':
+                $options['notags'] = true;
+                unset($argv[$i]);
+                break;
+        }
+    }
+    $argv = array_merge($argv);
+    $argc = count($argv);
+
+    if ($argc == 2 && $argv[1] == '-') {
+        while ($line = trim(fgets(STDIN))) {
+            $line = strip_dotdash($line);
+            tag_file($line, $options);
+        }
+    }
+    else {
+        for ($i=1;$i<$argc;$i++ ) {
+            $line = strip_dotdash($argv[$i]);
+            tag_file($line, $options);
+        }
     }
 }
 function strip_dotdash($file) {
@@ -84,7 +99,7 @@ Tags and Numbers
 343: T_PRIVATE
 346: T_STATIC
  */
-function tag_file($file) {
+function tag_file($file, $options) {
     $defs = array();
     $offset = 0;
     $function = false;
@@ -96,6 +111,9 @@ function tag_file($file) {
     if (file_exists($file)) {
         $lines = file($file);
         $source = join("", $lines);
+        if ($options['notags']) {
+            $source = '<?php;'.$source.';?>';
+        }
         $tokens = token_get_all($source);
         unset($source);
         //$curly = 0;
@@ -124,17 +142,21 @@ function tag_file($file) {
 
             /*
             if (is_array($t)) {
-                echo 'T:'.token_name($t[0]).":".$t[1]."\n";
+                echo 'T:'.token_name($t[0]).':'.$t[1]."\n";
             }
             else {
                 echo 'S:'.$t."\n";
             }
             */
+
             if (is_array($t) && ($t[0] == T_FOREACH)) {
                 $foreach = true;
             }
             elseif (is_array($t) && ($t[0] == T_AS)) {
                 $as = $p_level;
+            }
+            elseif (is_array($t) && ($t[0] == T_LIST)) {
+                $list = $p_level + 1;
             }
 
             if (is_array($t) && ($t[0] == T_VARIABLE || $t[0] == T_STRING_VARNAME)) {
@@ -146,11 +168,14 @@ function tag_file($file) {
                     $assigned[$var_tok[1]] = true;
                     $var_tok = null;
                 }
+                elseif ($list == $p_level) {
+                    $assigned[$var_tok[1]] = true;
+                    $var_tok = null;
+                }
             }
             elseif ($t == '(') {
                 $p_level++;
             }
-            // Pro schlieﬂender Klammer die Variablen abschlieﬂen die auf dem level vorkamen
             elseif ($t == ')') {
 
                 if (!empty($assign)) {
@@ -174,6 +199,9 @@ function tag_file($file) {
                 if ($foreach === true && $as && $as == $p_level) {
                     $foreach = false;
                     $as = false;
+                }
+                elseif ($list == $p_level) {
+                    $list = false;
                 }
                 $p_level--;
             }
@@ -213,7 +241,7 @@ function tag_file($file) {
             echo $name.':';
             echo join(';', $lines);
 
-            echo "\n";
+            echo PHP_EOL;
         }
     }
 
