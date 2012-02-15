@@ -143,6 +143,7 @@ function tag_file($file) {
                 $offset += strlen($t);
             }
         }
+        ksort($defs);
         $tags = join("", $defs);
         unset($defs);
         unset($lines);
