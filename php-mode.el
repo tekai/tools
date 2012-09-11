@@ -325,6 +325,7 @@ See `php-beginning-of-defun'."
   (set (make-local-variable 'c-opt-cpp-prefix) php-tags-key)
 
   (c-set-offset 'cpp-macro 0)
+  (c-set-offset 'arglist-cont-nonempty '++)
   
 ;;   (c-lang-defconst c-block-stmt-1-kwds php php-block-stmt-1-kwds)
 ;;   (c-lang-defvar c-block-stmt-1-kwds (c-lang-const c-block-stmt-1-kwds))
@@ -540,7 +541,8 @@ current `tags-file-name'."
   (let ((search-p (or search-p nil))
         (search nil)
         (method-p nil)
-        (constructor-p nil))
+        (constructor-p nil)
+        (back 0))
   (save-excursion
     (while (looking-at "\\sw\\|\\s_")
       (forward-char 1))
@@ -559,17 +561,23 @@ current `tags-file-name'."
                                (cond
                                  ((or (looking-back "->") (looking-back "::"))
                                   (setq method-p t)
-                                  (backward-char 2))
+                                  (setq back 2)
+                                  (backward-char back))
                                  ((looking-back "new ")
                                   (setq constructor-p t)
-                                  (backward-char 4))))
+                                  (setq back 4)
+                                  (backward-char back))
+                                 ((looking-back "extends ")
+                                  (setq constructor-p t)
+                                  (setq back 8)
+                                  (backward-char back))))
                              (while (looking-at "\\s'")
                                (forward-char 1))
                              (point))))
                (cond (method-p
-                      (setq search (concat "method " (substring search 2))))
+                      (setq search (concat "method " (substring search back))))
                      (constructor-p
-                      (setq search (concat "constructor " (substring search 4)))))
+                      (setq search (concat "constructor " (substring search back)))))
                search)
       nil))))
 
@@ -636,6 +644,7 @@ current `tags-file-name'."
 (defun php-search-documentation (func)
   "Search PHP documentation for the word at point."
   (interactive (list (read-string "PHP Function: " (current-word t))))
+  (other-window 1)
   (browse-url (concat php-search-url func)))
 
 ;; Define function for browsing manual
