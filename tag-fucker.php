@@ -1,6 +1,9 @@
 #!/usr/bin/php
 <?php
 // #!/usr/bin/php -d xdebug.profiler_enable=On
+/*
+ * Doesn't tag interfaces, traits, const constants
+ */
 $argv = $_SERVER['argv'];
 $argc = $_SERVER['argc'];
 if ($argc < 2) {
@@ -31,21 +34,24 @@ suche => suchbegriff
  */
 
 function tag_file($file) {
-    $defs = array();
-    $offset = 0;
-    $function = false;
-    $class    = false;
-    $define   = false;
-    $stringp  = false;
-    $curly = 0;
-    $line = 0;
+    $defs         = array();
+    $offset       = 0;
+    $function     = false;
+    $class        = false;
+    $define       = false;
+    $stringp      = false;
+    $className    = '';
+    $constructorp = false;
+    $curly        = 0;
+    $line         = 0;
+    
     if (file_exists($file)) {
         echo chr(12)."\n".$file;
         $lines = file($file);
         $source = join("", $lines);
         $tokens = token_get_all($source);
         unset($source);
-        //$curly = 0;
+
         foreach ($tokens as &$t) {
 
             if (is_array($t)) {
@@ -56,6 +62,8 @@ function tag_file($file) {
                 elseif ($t[0] == T_CLASS) {
                     $class = true;
                     $className = '';
+                    $classdef = array('line' => $t[2], 'offset' => $offset);
+                    $constructorp = false;
                 }
                 elseif ($t[0] == T_EXTENDS) {
                     $extends = true;
@@ -65,12 +73,16 @@ function tag_file($file) {
                 }
                 elseif ($class && !$curly && $t[0] == T_STRING) {
                     $className = $t[1];
+                    // hmm merken wo die klasse anfaengt und wenn
+                    // $constructorp == false am ende der Klasse/Schleife
+                    // dann Klassendef als constructor
                 }
                 // class or function/method name
                 elseif ($function && $t[0] == T_STRING) {
                     if ($class && $curly && ($t[1] == '__construct' ||
                                              $t[1] == $className)) {
                         $type = 'constructor';
+                        $constructorp = true;
                     }
                     elseif ($class && $curly) {
                         $type = 'method';
@@ -93,7 +105,11 @@ function tag_file($file) {
                         $def['name'] = $type.' '.$t[1];
                     }
                     if ($function) {
-                        $defs[$def['name']] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
+                        $defs[$def['name']] = ''
+                            .$def['search'].chr(127)
+                            .$def['name'].chr(1)
+                            .$def['line'].','
+                            .$def['offset']."\n";
                         $def = array();
                         $function = false;
                     }
@@ -113,10 +129,14 @@ function tag_file($file) {
                     if ($m) {
                         $def['search'] = $m[0];
                         // offset has to point to the start of the line
-                        $def['offset'] -= strlen($m1);
+                        $def['offset'] -= strlen($m[1]);
                     }
                     $def['name'] = substr($t[1],1,-1);
-                    $defs[$def['name']] = $def['search'].chr(127).$def['name'].chr(1).$def['line'].','.$def['offset']."\n";
+                    $defs[$def['name']] = ''
+                        .$def['search'].chr(127)
+                        .$def['name'].chr(1)
+                        .$def['line'].','
+                        .$def['offset']."\n";
                     $def = array();
 
                 }
@@ -136,8 +156,34 @@ function tag_file($file) {
                 }
                 elseif ($t == '}' && $class && !$stringp) {
                     $curly--;
-                    if (!$curly)
+                    // end of class definition?
+                    if (!$curly) {
                         $class = false;
+
+                        // put in fake constructor pointing to class def
+                        if (!$constructorp) {
+                            $type = 'constructor';
+                            $classdef['search'] = 'class '.$className;
+                            preg_match(
+                                '/^(.*)'
+                                .preg_quote($classdef['search'], '/')
+                                .'/',
+                                $lines[$classdef['line']-1],
+                                $m);
+                            if (!empty($m)) {
+                                $classdef['search'] = $m[0];
+                                // offset has to point to the start of the line
+                                $classdef['offset'] -= strlen($m[1]);
+                            }
+                            $classdef['name'] = $type.' '.$className;
+                            $defs[$classdef['name']] = ''
+                                .$classdef['search'].chr(127)
+                                .$classdef['name'].chr(1)
+                                .$classdef['line'].','
+                                .$classdef['offset']."\n";
+
+                        }
+                    }
                 }
 
                 $offset += strlen($t);
