@@ -33,9 +33,11 @@ T_SL_EUQAL
 T_OR_EUQAL
 T_XOR_EUQAL
 
-bugs:
-- doesn't handle scope (functions, classes) as in it assumes it's all in the same scope
-- doesn't handle variables introduction by function parameters
+Bugs:
+- doesn't handle scope (functions, classes) as in it assumes it's all in
+  the same scope
+- doesn't handle parameters passed with &, but those are a not common or
+  such a good idea anyways
 
 Feature:
 Doesn't handle eval, variable vars, create_function() etc. because they're kinda bad
@@ -134,12 +136,13 @@ function tag_file($file, $options) {
 
         $foreach = false;
         $as = false;
+        $function = false;
+        $list = false;
         $unassigned = array();
         $assign  = array();
         $var_tok = null;
         $p_level = 1; // Verschachtelung von () + 1 damit == true
         foreach ($tokens as &$t) {
-
             /*
             if (is_array($t)) {
                 echo 'T:'.token_name($t[0]).':'.$t[1]."\n";
@@ -147,9 +150,12 @@ function tag_file($file, $options) {
             else {
                 echo 'S:'.$t."\n";
             }
+            continue;
             */
-
-            if (is_array($t) && ($t[0] == T_FOREACH)) {
+            if (is_array($t) && ($t[0] == T_FUNCTION)) {
+                $function = $p_level + 1;
+            }
+            elseif (is_array($t) && ($t[0] == T_FOREACH)) {
                 $foreach = true;
             }
             elseif (is_array($t) && ($t[0] == T_AS)) {
@@ -169,6 +175,10 @@ function tag_file($file, $options) {
                     $var_tok = null;
                 }
                 elseif ($list == $p_level) {
+                    $assigned[$var_tok[1]] = true;
+                    $var_tok = null;
+                }
+                elseif ($function === $p_level) {
                     $assigned[$var_tok[1]] = true;
                     $var_tok = null;
                 }
@@ -202,6 +212,9 @@ function tag_file($file, $options) {
                 }
                 elseif ($list == $p_level) {
                     $list = false;
+                }
+                elseif ($function == $p_level) {
+                    $function = false;
                 }
                 $p_level--;
             }
