@@ -1,6 +1,7 @@
-#!/usr/bin/php -d xdebug.profiler_enable=On
+#!/usr/bin/php 
 <?php
-// #!/usr/bin/php
+#!/usr/bin/php -d xdebug.remote_autostart="on" 
+
 
 
 /**
@@ -34,8 +35,9 @@ T_OR_EUQAL
 T_XOR_EUQAL
 
 Bugs:
-- doesn't handle scope (functions, classes) as in it assumes it's all in
-  the same scope
+- $this handling is shaky, it doesn't complain about $this in classes
+  but doesn't check if $this->var has ever been declared
+  (it can't check for assignment!)
 - doesn't handle parameters passed with &, but those are a not common or
   such a good idea anyways
 
@@ -102,14 +104,7 @@ Tags and Numbers
 346: T_STATIC
  */
 function tag_file($file, $options) {
-    $defs = array();
-    $offset = 0;
-    $function = false;
-    $class    = false;
-    $define   = false;
-    $stringp  = false;
-    $curly = 0;
-    $line = 0;
+
     if (file_exists($file)) {
         $lines = file($file);
         $source = join("", $lines);
@@ -118,14 +113,8 @@ function tag_file($file, $options) {
         }
         $tokens = token_get_all($source);
         unset($source);
-        //$curly = 0;
-        $assigned  =
-            array('$_GET'    => true,
-                  '$GLOBALS' => true,
-                  '$_POST'   => true,
-                  '$_COOKIE' => true,
-                  '$_SERVER' => true,
-                  '$_ENV'    => true);
+        $curly = 0;
+        $assigned  = init_scope(false) ;
 
         // TODO doesn't handle:
         // $this doable?
@@ -134,11 +123,15 @@ function tag_file($file, $options) {
         // arrays only to limited extend
         // object fields only those directly declared in the class
 
-        $foreach = false;
-        $as = false;
-        $function = false;
-        $list = false;
-        $unassigned = array();
+        $foreach    = false;
+        $as         = false;
+        $parameters = false;
+        $list       = false;
+        $class      = false;
+
+        $unassigned = array(
+            // 'scope' => array('global')
+                           );
         $assign  = array();
         $var_tok = null;
         $p_level = 1; // Verschachtelung von () + 1 damit == true
@@ -152,8 +145,25 @@ function tag_file($file, $options) {
             }
             continue;
             */
-            if (is_array($t) && ($t[0] == T_FUNCTION)) {
-                $function = $p_level + 1;
+            if (is_array($t) && ($t[0] == T_CLASS)) {
+                $class = $curly + 1;
+                $global_unassigned = $unassigned;
+                $global_assigned = $assigned;
+                $unassigned = array(
+                    // 'scope' => array('class')
+                                   );
+            }
+            elseif (is_array($t) && ($t[0] == T_FUNCTION)) {
+                $parameters = $p_level + 1;
+                $function = $curly + 1;
+                if (!$class) {
+                    $global_unassigned = $unassigned;
+                    $global_assigned   = $assigned;
+                }
+                $assigned = init_scope($class);
+                $unassigned = array(
+                    // 'scope' => array('function')
+                                   );
             }
             elseif (is_array($t) && ($t[0] == T_FOREACH)) {
                 $foreach = true;
@@ -174,14 +184,34 @@ function tag_file($file, $options) {
                     $assigned[$var_tok[1]] = true;
                     $var_tok = null;
                 }
-                elseif ($list == $p_level) {
+                elseif ($list === $p_level) {
                     $assigned[$var_tok[1]] = true;
                     $var_tok = null;
                 }
-                elseif ($function === $p_level) {
+                elseif ($parameters === $p_level) {
                     $assigned[$var_tok[1]] = true;
                     $var_tok = null;
                 }
+            }
+            elseif ($t == '{') {
+                $curly++;
+            }
+            elseif ($t == '}') {
+                if ($function === $curly) {
+                    print_unassigned($unassigned);
+                    $function = false;
+                    if (!$class) {
+                        $unassigned = $global_unassigned;
+                        $assigned   = $global_assigned;
+                    }
+                    $var_tok = null;
+                }
+                elseif ($class === $curly) {
+                    $class = false;
+                    $unassigned = $global_unassigned;
+                    $assigned   = $global_assigned;
+                }
+                $curly--;
             }
             elseif ($t == '(') {
                 $p_level++;
@@ -213,8 +243,8 @@ function tag_file($file, $options) {
                 elseif ($list == $p_level) {
                     $list = false;
                 }
-                elseif ($function == $p_level) {
-                    $function = false;
+                elseif ($parameters == $p_level) {
+                    $parameters = false;
                 }
                 $p_level--;
             }
@@ -248,15 +278,31 @@ function tag_file($file, $options) {
             else {
                 continue;
             }
-
         }
-        foreach ($unassigned as $name => $lines) {
-            echo $name.':';
-            echo join(';', $lines);
-
-            echo PHP_EOL;
-        }
+        print_unassigned($unassigned);
     }
 
+}
+function init_scope($classp) {
+    $return = array(
+        '$_GET'    => true,
+        '$GLOBALS' => true,
+        '$_POST'   => true,
+        '$_COOKIE' => true,
+        '$_SERVER' => true,
+        '$_ENV'    => true);
+
+    if ($classp) {
+        $return['$this'] = true;
+    }
+    return $return;
+}
+function print_unassigned($unassigned) {
+    foreach ($unassigned as $name => $lines) {
+        echo $name.':';
+        echo join(';', $lines);
+
+        echo PHP_EOL;
+    }
 }
 ?>
