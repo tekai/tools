@@ -82,11 +82,11 @@ prefix to insert the result"
 iff the file is in the same path as the TAGS file"
   (when (and (string-match "\.php$" buffer-file-truename)
              tags-file-name)
-    (let* ((l (- (length tags-file-name) 4))
-           (tp (substring tags-file-name
-                          0 l))
-           (bp (substring buffer-file-truename
-                          0 (min l (length buffer-file-truename)))))
+    (let* ((tfn (expand-file-name tags-file-name))
+           (bft (expand-file-name buffer-file-truename))
+           (l (- (length tfn) 4))
+           (tp (substring tfn 0 l))
+           (bp (substring bft 0 (min l (length bft)))))
       (when (string-equal tp bp)
         (message "* yup update TAGS *")
         (update-tag-file)))
@@ -163,12 +163,13 @@ iff the file is in the same path as the TAGS file"
 
 ;; missing: get-block, split-string
 ;; check: dolist
-;; (defun php-get-undeclared-variables ()
+;; (defun php-get-undeclared-variables (start end)
 ;;   "Get a list of undeclared variables of the surrounding block.
 ;; \(Doesn't deal with list\(...\) = yet\)"
-;;   (interactive)
+;;   (interactive "r")
 ;;   (let ((vars nil)
-;;         (code-block (get-block)))
+;;         (code-block (buffer-substring start end)))
+;; use call-process-region ?
 ;;     (setq ret (shell-command-to-string (format "get-undeclared-vars.php - %s" block)))
 ;;     (if (string= ret "")
 ;;         (message "No undeclared variables")
