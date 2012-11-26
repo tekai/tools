@@ -145,6 +145,11 @@ iff the file is in the same path as the TAGS file"
           (display-buffer buf t))
         t)))
 
+(defun php-get-function-name ()
+  (interactive)
+  (save-excursion
+    (when (re-search-backward php-beginning-of-defun-regexp nil t)
+      (message "closest function: %s" (match-string-no-properties 1)))))
 
 ;;
 ;; Indentation in PHP could be better by imho following Java coding
