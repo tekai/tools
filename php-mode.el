@@ -677,6 +677,10 @@ current `tags-file-name'."
 (define-key php-mode-map
   (kbd "<f12>")
   'php-check-syntax-and-goto-line)
+
+(define-key php-mode-map
+    (kbd "C-M-a")
+  'beginning-of-defun)
 
 (defconst php-constants
   (eval-when-compile
