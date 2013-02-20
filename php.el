@@ -182,3 +182,24 @@ iff the file is in the same path as the TAGS file"
 ;;         (dolist (vars v)
 ;;           (setq v (split-string ";"))
 ;;           (message (car v))))))
+
+
+(defun css-charset-auto-coding-function (size)
+  "If the buffer has a @charset at-rule, use it to determine encoding.
+This function is intended to be added to `auto-coding-functions'."
+  (let ((case-fold-search t))
+    (setq size (min (+ (point) size)
+			  ;; In case of no header, search only 10 lines.
+            (save-excursion
+			  (forward-line 10)
+		      (point))))
+    (when 
+        (re-search-forward "@charset \"\\([a-z0-8-]+\\)\"" size t)
+      (let* ((match (match-string 1))
+	     (sym (intern (downcase match))))
+	(if (coding-system-p sym)
+	    sym
+	  (message "Warning: unknown coding system \"%s\"" match)
+	  nil)))))
+
+(add-to-list 'auto-coding-functions 'css-charset-auto-coding-function)
