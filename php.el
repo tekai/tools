@@ -10,8 +10,8 @@
   "Run a line! of PHP code. Use echo to see a result. Call with any
 prefix to insert the result"
   (interactive "sPHP Code: \nP")
-  (let* ((code (replace-regexp-in-string "\"" "\\\\\"" code))
-         (result (shell-command-to-string (format "php -r \"%s;\"" code))))
+  (let* ((code (shell-quote-argument code))
+         (result (shell-command-to-string (format "php -r %s" code))))
     (if doInsert
         (insert result)
         (message "php -r \"%s;\"" code)
@@ -80,7 +80,9 @@ prefix to insert the result"
 (defun php-after-save-hook ()
   "check syntax after saving php-file & update TAGS file
 iff the file is in the same path as the TAGS file"
-  (when (and (string-match "\.php$" buffer-file-truename)
+  (when (and buffer-file-truename
+             (string-match "\.php$" buffer-file-truename)
+             (not (file-remote-p (buffer-file-name)))
              tags-file-name)
     (let* ((tfn (expand-file-name tags-file-name))
            (bft (expand-file-name buffer-file-truename))
