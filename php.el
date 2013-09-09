@@ -52,21 +52,21 @@ prefix to insert the result"
 ;;   or modify it to use etags ( "etags -o- <file>" prints)
 (defun update-tag-file ()
   "update the TAGS from the current buffer"
-  (when tags-file-name
-    (let ((root (substring tags-file-name
-                           0 (- (length tags-file-name) 4))))
+  (when (and tags-file-name buffer-file-truename)
+    (let* ((tags-file (expand-file-name tags-file-name))
+           (root (substring tags-file 0 (- (length tags-file) 4))))
       (save-current-buffer
-        (let ((buf (find-file-noselect tags-file-name))
-              (p-file (buffer-file-name)))
+        (let ((buf (find-file-noselect tags-file))
+              (php-file (substring (file-truename buffer-file-truename) (length root))))
           (set-buffer buf)
           (goto-char (point-min))
-          (when (search-forward (substring p-file (length root)) nil t)
+          (when (search-forward php-file nil t)
             (let ((start (search-backward ""))
                   (end (search-forward "" nil t 2)))
               (delete-region start (or (and end (1- end)) (point-max)))
               (save-buffer buf)))
           (shell-command
-           (format "tag-fucker.php %s >> %s" p-file tags-file-name) nil)
+           (format "tag-fucker.php %s >> %s" php-file tags-file-name) nil)
           (revert-buffer t t)
           (visit-tags-table tags-file-name))))
     nil))
