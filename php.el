@@ -94,7 +94,7 @@ iff the file is in the same path as the TAGS file"
         (update-tag-file)))
     (php-check-syntax)))
 
-(add-hook 'after-save-hook 'php-after-save-hook)
+(add-hook 'php-mode-hook '(lambda () (add-hook 'after-save-hook 'php-after-save-hook nil t)) t)
 
 ;; PHP XREF via grep
 (defun php-xref (func)
