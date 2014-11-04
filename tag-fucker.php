@@ -1,5 +1,7 @@
 #!/usr/bin/php
 <?php
+error_reporting (E_ALL & ~E_NOTICE);
+
 // #!/usr/bin/php -d xdebug.profiler_enable=On
 /*
  * Doesn't tag interfaces, traits, const constants
@@ -17,7 +19,7 @@ elseif ($argc == 2 && $argv[1] == '-') {
 }
 else {
     for ($i=1;$i<$argc;$i++ ) {
-        $line = strip_dotdash($line);
+        $line = strip_dotdash($argv[$i]);
         tag_file($argv[$i]);
     }
 }
@@ -40,6 +42,7 @@ function tag_file($file) {
     $class        = false;
     $define       = false;
     $stringp      = false;
+    $extends      = false;
     $className    = '';
     $constructorp = false;
     $curly        = 0;
@@ -71,7 +74,7 @@ function tag_file($file) {
                 elseif ($extends && $t[0] == T_STRING) {
                     $extends = false;
                 }
-                elseif ($class && !$curly && $t[0] == T_STRING) {
+                elseif ($class && !$curly && !$className && $t[0] == T_STRING) {
                     $className = $t[1];
                     // hmm merken wo die klasse anfaengt und wenn
                     // $constructorp == false am ende der Klasse/Schleife
