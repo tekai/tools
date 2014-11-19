@@ -47,6 +47,9 @@ function tag_file($file) {
     $constructorp = false;
     $curly        = 0;
     $line         = 0;
+
+    $namespace    = array();
+    $nsp          = false;
     
     if (file_exists($file)) {
         echo chr(12)."\n".$file;
@@ -58,7 +61,14 @@ function tag_file($file) {
         foreach ($tokens as &$t) {
 
             if (is_array($t)) {
-                if ($t[0] == T_FUNCTION) {
+                if ($t[0] == T_NAMESPACE) {
+                    $nsp = true;
+                    $namespace = array();
+                }
+                elseif ($nsp && $t[0] == T_STRING) {
+                    $namespace[] = $t[1];
+                }
+                elseif ($t[0] == T_FUNCTION) {
                     $function = true;
                     $def = array('line' => $t[2], 'offset' => $offset);
                 }
@@ -186,6 +196,12 @@ function tag_file($file) {
                                 .$classdef['offset']."\n";
 
                         }
+                    }
+                }
+                elseif ($t == ';') {
+                    if ($nsp) {
+                        $nsp = false;
+                        $namespace = implode('\'', $namespace);
                     }
                 }
 
