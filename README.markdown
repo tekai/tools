@@ -1,12 +1,8 @@
 Collection of tools I using during PHP development using Emacs
 
-php-mode.el
------------
-php-mode.el is based on [php-mode.sf.net](http://php-mode.sf.net) but uses a different `TAGS` file format to differentiate between methods and functions and associate `new Object()` with the right method `__constructor()`.
-
-tag-fucker.php
+php-etags.php
 --------------
-The tool to create the `TAGS` file for the php-mode.el
+Creates a different `TAGS` file format to differentiate between methods and functions and associate `new Object()` with the right method `__constructor()`.
 
 php.el
 ------
