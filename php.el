@@ -36,7 +36,8 @@ prefix to insert the result"
     t))
 
 (defun php-debug-file ()
-  "Run file in CLI with debugger enabled. geben is an emacs frontend for xdebug"
+  "Run file in CLI with debugger enabled. geben is an emacs
+frontend for xdebug"
   (interactive)
   (if (not (buffer-modified-p))
       (async-shell-command (format "export  XDEBUG_CONFIG=\"idekey=geben-xdebug\"; php -f %s" (buffer-file-name)))
@@ -48,7 +49,7 @@ prefix to insert the result"
 ;;   between projects make sure you visit the right TAGS file before
 ;;   using this
 ;; - I don't know if it works with multiple TAGS files
-;; - uses tag-fucker.php so either use that & my modified php-mode
+;; - uses php-etags.php so either use that & my modified php-mode
 ;;   or modify it to use etags ( "etags -o- <file>" prints)
 (defun update-tag-file ()
   "update the TAGS from the current buffer"
@@ -66,7 +67,7 @@ prefix to insert the result"
               (delete-region start (or (and end (1- end)) (point-max)))
               (save-buffer buf)))
           (shell-command
-           (format "tag-fucker.php %s >> %s" php-file tags-file-name) nil)
+           (format "php-etags.php %s >> %s" php-file tags-file-name) nil)
           (revert-buffer t t)
           (visit-tags-table tags-file-name))))
     nil))
@@ -90,7 +91,7 @@ iff the file is in the same path as the TAGS file"
            (tp (substring tfn 0 l))
            (bp (substring bft 0 (min l (length bft)))))
       (when (string-equal tp bp)
-        (message "* yup update TAGS *")
+        ;;(message "* yup update TAGS *")
         (update-tag-file)))
     (php-check-syntax)))
 
@@ -170,20 +171,28 @@ iff the file is in the same path as the TAGS file"
 
 ;; missing: get-block, split-string
 ;; check: dolist
-;; (defun php-get-undeclared-variables (start end)
-;;   "Get a list of undeclared variables of the surrounding block.
-;; \(Doesn't deal with list\(...\) = yet\)"
-;;   (interactive "r")
-;;   (let ((vars nil)
-;;         (code-block (buffer-substring start end)))
-;; use call-process-region ?
-;;     (setq ret (shell-command-to-string (format "get-undeclared-vars.php - %s" block)))
-;;     (if (string= ret "")
-;;         (message "No undeclared variables")
-;;         (setq vars (split-string "\n" ret))
-;;         (dolist (vars v)
-;;           (setq v (split-string ";"))
-;;           (message (car v))))))
+(defun php-get-undeclared-variables (start end)
+  "Get a list of undeclared variables of the surrounding block.
+\(Doesn't deal with list\(...\) = yet\)"
+  (interactive "r")
+  (let ((code-block (buffer-substring start end))
+        (tmp-name (make-temp-name "/tmp/phpvars"))
+        vars)
+    ;; use call-process-region ?
+    (with-temp-file tmp-name
+      (insert code-block))
+    (setq ret (shell-command-to-string (format "get-undeclared-vars.php -r %s" tmp-name)))
+    (delete-file tmp-name)
+    (if (string= ret "")
+        (message "No undeclared variables")
+        (message (substring ret 0 -1))
+        ;; (setq vars (split-string ret "\n"))
+        ;; (message (format "RET: %s" vars))
+        ;; (dolist (v vars)
+        ;;   (message v)
+        ;;   (setq v (split-string v ";"))
+        ;;   (message (car v))
+          )))
 
 
 (defun css-charset-auto-coding-function (size)
@@ -205,3 +214,4 @@ This function is intended to be added to `auto-coding-functions'."
 	  nil)))))
 
 (add-to-list 'auto-coding-functions 'css-charset-auto-coding-function)
+
