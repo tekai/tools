@@ -215,3 +215,22 @@ This function is intended to be added to `auto-coding-functions'."
 
 (add-to-list 'auto-coding-functions 'css-charset-auto-coding-function)
 
+(c-add-style
+ "php-ees"
+ '("php"
+   (c-basic-offset . 4)
+   (c-doc-comment-style . javadoc)
+   (c-offsets-alist . ((arglist-close . php-lineup-arglist-close)
+                       (arglist-cont . (first php-lineup-cascaded-calls 0))
+                       (arglist-cont-nonempty . (first php-lineup-cascaded-calls c-lineup-arglist))
+                       (arglist-intro . php-lineup-arglist-intro)
+                       (case-label . +)
+                       (class-open . -)
+                       (comment-intro . 0)
+                       (inlambda . 0)
+                       (inline-open . 0)
+                       (label . +)
+                       (statement-cont . +)
+                       (substatement-open . 0)
+                       (brace-list-entry . 0)
+                       (topmost-intro-cont . +)))))
