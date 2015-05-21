@@ -53,9 +53,8 @@ function tag_file($file) {
     $ns_arr       = array();
     $namespace    = '';
     $nsp          = false;
-    
+
     if (file_exists($file)) {
-        echo chr(12)."\n".$file;
         $lines = file($file);
         $source = join("", $lines);
         $tokens = token_get_all($source);
@@ -217,13 +216,14 @@ function tag_file($file) {
                 $offset += strlen($t);
             }
         }
-        ksort($defs);
-        $tags = join("", $defs);
-        unset($defs);
-        unset($lines);
-        echo ',',strlen($tags),"\n",
-            $tags;
-       
+        if (!empty($defs)) {
+            ksort($defs);
+            $tags = join("", $defs);
+            unset($defs);
+            unset($lines);
+            echo chr(12)."\n".$file;
+            echo ',',strlen($tags),"\n",
+                $tags;
+        }
     }
-
 }
