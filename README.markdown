@@ -1,4 +1,4 @@
-Collection of tools I using during PHP development using Emacs
+A collection of tools for PHP & Emacs
 
 php-etags.php
 --------------
