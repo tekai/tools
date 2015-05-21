@@ -1,8 +1,10 @@
 #!/usr/bin/php
 <?php
 error_reporting (E_ALL & ~E_NOTICE);
-
+// #!/usr/bin/php
+// #!/usr/bin/php -d xdebug.remote_autostart
 // #!/usr/bin/php -d xdebug.profiler_enable=On
+
 /*
  * Doesn't tag interfaces, traits, const constants
  */
@@ -48,7 +50,8 @@ function tag_file($file) {
     $curly        = 0;
     $line         = 0;
 
-    $namespace    = array();
+    $ns_arr       = array();
+    $namespace    = '';
     $nsp          = false;
     
     if (file_exists($file)) {
@@ -63,10 +66,11 @@ function tag_file($file) {
             if (is_array($t)) {
                 if ($t[0] == T_NAMESPACE) {
                     $nsp = true;
-                    $namespace = array();
+                    $ns_arr = array();
+                    $namespace = '';
                 }
                 elseif ($nsp && $t[0] == T_STRING) {
-                    $namespace[] = $t[1];
+                    $ns_arr[] = $t[1];
                 }
                 elseif ($t[0] == T_FUNCTION) {
                     $function = true;
@@ -198,10 +202,15 @@ function tag_file($file) {
                         }
                     }
                 }
+                // anonymous function
+                elseif ($t == '(' && $function) {
+                    $function = false;
+                    $def = array();
+                }
                 elseif ($t == ';') {
                     if ($nsp) {
                         $nsp = false;
-                        $namespace = implode('\'', $namespace);
+                        $namespace = implode('\\', $ns_arr).'\\';
                     }
                 }
 
@@ -218,4 +227,3 @@ function tag_file($file) {
     }
 
 }
-?>
