@@ -189,8 +189,13 @@ function tag_file($file) {
                     $stringp = !$stringp;
                 }
                 elseif ($t == '{' && !$stringp) {
-                    if ($class)
+                    if ($nsp) {
+                        $nsp = false;
+                        $namespace = implode('\\', $ns_arr).'\\';
+                    }
+                    elseif ($class) {
                         $curly++;
+                    }
                 }
                 elseif ($t == '}' && $class && !$stringp) {
                     $curly--;
@@ -233,7 +238,6 @@ function tag_file($file) {
                     }
                     $constp = false;
                 }
-
                 $offset += strlen($t);
             }
         }
