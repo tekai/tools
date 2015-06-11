@@ -46,6 +46,7 @@ function tag_file($file) {
     $stringp      = false;
     $constp       = false;
     $extends      = false;
+    $interfacep   = false;
     $className    = '';
     $constructorp = false;
     $curly        = 0;
@@ -85,6 +86,29 @@ function tag_file($file) {
                 elseif ($t[0] === T_EXTENDS) {
                     $extends = true;
                 }
+                elseif ($t[0] === T_INTERFACE) {
+                    $interfacep = true;
+                }
+                elseif ($interfacep && !$curly && $t[0] === T_STRING) {
+                    $type = 'interface';
+                    $def['search'] = 'interface '.$t[1];
+                    preg_match(
+                        '/^(.*)'
+                        .preg_quote($def['search'], '/')
+                        .'/',
+                        $lines[$def['line']-1],
+                        $m);
+                    if (!empty($m)) {
+                        $def['search'] = $m[0];
+                        // offset has to point to the start of the line
+                        $def['offset'] -= strlen($m[1]);
+                    }
+                    $def['name'] = $type.' '.$t[1];
+                    if ($namespace) {
+                        $def['ns-name'] = $type.' '.$namespace.$t[1];
+                    }
+                    add_def($defs, $def);
+                }
                 elseif ($t[0] === T_CONST) {
                     $constp = true;
                     $def = array('line' => $t[2], 'offset' => $offset);
@@ -105,19 +129,21 @@ function tag_file($file) {
                         $type = 'constructor';
                         $constructorp = true;
                     }
-                    elseif ($class && $curly) {
+                    elseif (($class || $interfacep) && $curly) {
                         $type = 'method';
                     }
                     else {
                         $type = 'function';
                     }
 
-                    $def['search'] = 'function '.$t[1];
+                    $prefix = 'function';
+                    $def['search'] = $prefix.' '.$t[1];
+
                     preg_match('/^(.*)'.preg_quote($t[1], '/').'/', $lines[$t[2]-1], $m);
                     if (!empty($m)) {
                         $def['search'] = $m[0];
                         // offset has to point to the start of the line
-                        $def['offset'] -= strlen($m[1]) -9;
+                        $def['offset'] -= strlen($m[1]) - (strlen($prefix) + 1);
                     }
                     if ($type == 'constructor') {
                         $def['name'] = $type.' '.$className;
@@ -193,7 +219,7 @@ function tag_file($file) {
                         $nsp = false;
                         $namespace = implode('\\', $ns_arr).'\\';
                     }
-                    elseif ($class) {
+                    elseif ($class || $interfacep) {
                         $curly++;
                     }
                 }
@@ -225,6 +251,9 @@ function tag_file($file) {
                             add_def($defs, $classdef);
                         }
                     }
+                }
+                elseif ($t == '}' && $interfacep && !$stringp) {
+                    $curly--;
                 }
                 // anonymous function
                 elseif ($t == '(' && $functionp) {
