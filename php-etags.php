@@ -204,6 +204,12 @@ function tag_file($file) {
                     $def = array();
 
                 }
+                elseif ($t[0] === T_START_HEREDOC) {
+                    $stringp = true;
+                }
+                elseif ($t[0] === T_END_HEREDOC) {
+                    $stringp = false;
+                }
                 else {
                     //echo $t[0].':'.token_name($t[0])."\n";
                 }
