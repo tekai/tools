@@ -55,7 +55,7 @@ frontend for xdebug"
   "update the TAGS from the current buffer"
   (when (and tags-file-name buffer-file-truename)
     (let* ((tags-file (expand-file-name tags-file-name))
-           (root (substring tags-file 0 (- (length tags-file) 4))))
+           (root (file-name-directory tags-file)))
       (save-current-buffer
         (let ((buf (find-file-noselect tags-file))
               (php-file (substring (file-truename buffer-file-truename) (length root))))
@@ -82,16 +82,12 @@ frontend for xdebug"
   "check syntax after saving php-file & update TAGS file
 iff the file is in the same path as the TAGS file"
   (when (and buffer-file-truename
-             (string-match "\.php$" buffer-file-truename)
+             (string-suffix-p ".php" buffer-file-truename)
              (not (file-remote-p (buffer-file-name)))
              tags-file-name)
-    (let* ((tfn (expand-file-name tags-file-name))
-           (bft (expand-file-name buffer-file-truename))
-           (l (- (length tfn) 4))
-           (tp (substring tfn 0 l))
-           (bp (substring bft 0 (min l (length bft)))))
-      (when (string-equal tp bp)
-        ;;(message "* yup update TAGS *")
+    (let ((dir (file-name-directory (expand-file-name tags-file-name)))
+          (file (expand-file-name buffer-file-truename)))
+      (when (string-prefix-p dir file)
         (update-tag-file)))
     (php-check-syntax)))
 
