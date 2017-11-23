@@ -185,14 +185,8 @@ iff the file is in the same path as the TAGS file"
     (delete-file tmp-name)
     (if (string= ret "")
         (message "No undeclared variables")
-        (message (substring ret 0 -1))
-        ;; (setq vars (split-string ret "\n"))
-        ;; (message (format "RET: %s" vars))
-        ;; (dolist (v vars)
-        ;;   (message v)
-        ;;   (setq v (split-string v ";"))
-        ;;   (message (car v))
-          )))
+        (message (substring ret 0 -1)))
+    (setq deactivate-mark t)))
 
 
 (defun css-charset-auto-coding-function (size)
