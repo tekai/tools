@@ -68,8 +68,8 @@ frontend for xdebug"
               (save-buffer buf)))
           (shell-command
            (format "php-etags.php %s >> %s" php-file tags-file-name) nil)
-          (revert-buffer t t)
-          (visit-tags-table tags-file-name))))
+          (revert-buffer t t)))
+      (visit-tags-table tags-file-name (local-variable-p 'tags-file-name)))
     nil))
 
 ;; shortcut to rebuild table
