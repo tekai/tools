@@ -53,12 +53,12 @@ frontend for xdebug"
 ;;   or modify it to use etags ( "etags -o- <file>" prints)
 (defun update-tag-file ()
   "update the TAGS from the current buffer"
-  (when (and tags-file-name buffer-file-truename)
-    (let* ((tags-file (expand-file-name tags-file-name))
+  (when (and tags-file-name buffer-file-name)
+    (let* ((tags-file (file-truename tags-file-name))
            (root (file-name-directory tags-file)))
       (save-current-buffer
         (let ((buf (find-file-noselect tags-file))
-              (php-file (substring (file-truename buffer-file-truename) (length root))))
+              (php-file (substring (file-truename buffer-file-name) (length root))))
           (set-buffer buf)
           (goto-char (point-min))
           (when (search-forward php-file nil t)
@@ -67,7 +67,7 @@ frontend for xdebug"
               (delete-region start (or (and end (1- end)) (point-max)))
               (save-buffer buf)))
           (shell-command
-           (format "php-etags.php %s >> %s" php-file tags-file-name) nil)
+           (format "php-etags.php %s >> %s" php-file tags-file) nil)
           (revert-buffer t t)))
       (visit-tags-table tags-file-name (local-variable-p 'tags-file-name)))
     nil))
@@ -79,16 +79,16 @@ frontend for xdebug"
   (php-completion-table))
 
 (defun php-after-save-hook ()
-  "check syntax after saving php-file & update TAGS file
+  "check syntax after saving php-file. Also update the TAGS file
 iff the file is in the same path as the TAGS file"
-  (when (and buffer-file-truename
-             (string-suffix-p ".php" buffer-file-truename)
-             (not (file-remote-p (buffer-file-name)))
-             tags-file-name)
-    (let ((dir (file-name-directory (expand-file-name tags-file-name)))
-          (file (expand-file-name buffer-file-truename)))
-      (when (string-prefix-p dir file)
-        (update-tag-file)))
+  (when (and buffer-file-name
+             (string-suffix-p ".php" buffer-file-name)
+             (not (file-remote-p (buffer-file-name))))
+    (when tags-file-name
+      (let ((dir (file-name-directory (file-truename tags-file-name)))
+            (file (expand-file-name buffer-file-truename)))
+        (when (string-prefix-p dir file)
+          (update-tag-file))))
     (php-check-syntax)))
 
 (add-hook 'php-mode-hook '(lambda () (add-hook 'after-save-hook 'php-after-save-hook nil t)) t)
