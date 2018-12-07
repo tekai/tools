@@ -93,57 +93,6 @@ iff the file is in the same path as the TAGS file"
 
 (add-hook 'php-mode-hook '(lambda () (add-hook 'after-save-hook 'php-after-save-hook nil t)) t)
 
-;; PHP XREF via grep
-(defun php-xref (func)
-  "Try to find every call of func"
-  (interactive (list (read-string "PHP Function: " (current-word t))))
-  (let ((buffer-name "*php-xref*")
-        (msg nil)
-        (root (substring tags-file-name
-                         0 (- (length tags-file-name) 4)))
-        (func (replace-regexp-in-string "\"" "\\\\\"" func)))
-    (message (format "cd %s; grep -F -r -n -o --include='*.php' '\\<%s\\>' *" root func))
-    (setq msg (shell-command-to-string (format "cd %s; grep -F -r -n -o --include='*.php' '%s' *" root func)))
-    (if (string= msg "")
-        (progn (message "no references found") 
-               ;; clear buffer
-               (if (get-buffer buffer-name)
-                   (save-excursion
-                     (set-buffer (get-buffer buffer-name))
-                     (delete-region 1 (point-max))
-                     (insert "No references found")))
-               nil)
-        (if (get-buffer buffer-name)
-            (kill-buffer buffer-name))
-        (let ((buf (get-buffer-create buffer-name)))
-          (save-excursion
-            (set-buffer buf)
-            (insert msg)
-            (goto-char (point-min))
-            (let ((start 0)
-                  (last -1))
-              (while
-                  (setq start
-                        (search-forward-regexp
-                         "^\\([^:]+\\):\\([0-9]+\\):"
-                         nil t))
-                (let ((map (make-sparse-keymap))
-                      (F (concat root (match-string 1)))
-                      (L (string-to-number (match-string 2))))
-                  (define-key map
-                      [mouse-1] `(lambda ()
-                                   (interactive)
-                                   (find-file ,F)
-                                   (goto-line ,L)))
-                  (message "%d;%d" (match-beginning 1) (match-end 1))
-                  (put-text-property (match-beginning 1) (match-end 1) 'keymap map buf)
-                  (put-text-property (match-beginning 1) (match-end 1) 'face '(:underline t :foreground "blue") buf)))
-              ))
-          (set-buffer buf)
-          (goto-char (point-min))
-          (display-buffer buf t))
-        t)))
-
 (defun php-get-function-name ()
   (interactive)
   (save-excursion
